@@ -35,17 +35,46 @@ As etapas poderão ser divididas em entregas menores.
 - IndexedDB para armazenamento offline no navegador.
 - Exportação e importação de backup local, com validação dos dados.
 
-## Desenvolvimento
+## Como iniciar localmente
 
-Requisitos: Node.js 20.19+ ou 22.12+ e npm.
+### Requisitos
+
+- Node.js 20.19+ ou 22.12+.
+- npm (incluído com Node.js).
+
+### Primeira execução
+
+1. Clone o repositório e entre na pasta do projeto:
+
+   ```bash
+   git clone https://github.com/Serminho/Stack-Finance.git
+   cd Stack-Finance
+   ```
+
+2. Instale as dependências:
+
+   ```bash
+   npm install
+   ```
+
+3. Inicie o servidor de desenvolvimento:
+
+   ```bash
+   npm run dev
+   ```
+
+4. Abra no navegador o endereço informado no terminal, normalmente <http://localhost:5173>.
+
+O servidor continua ativo enquanto o terminal estiver aberto. Para encerrá-lo, pressione `Ctrl+C`.
+
+### Verificações
 
 ```bash
-npm install
-npm run dev
+npm run test
+npm run build
 ```
-
-Para gerar uma versão de produção, execute `npm run build`.
 Veja [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) para escopo, regras iniciais e proposta de arquitetura.
+
 
 
 
