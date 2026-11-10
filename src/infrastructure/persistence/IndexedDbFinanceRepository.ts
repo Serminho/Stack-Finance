@@ -3,12 +3,17 @@ import type { AccountRepository } from '../../domain/accounts/AccountRepository'
 import { Money } from '../../domain/money/Money'
 import { FinancialTransaction, type TransactionType } from '../../domain/transactions/FinancialTransaction'
 import type { TransactionRepository } from '../../domain/transactions/TransactionRepository'
+import { CreditCard } from '../../domain/cards/CreditCard'
+import type { CreditCardRepository } from '../../domain/cards/CreditCardRepository'
+import { CardPurchase } from '../../domain/cards/CardPurchase'
+import type { CardPurchaseRepository } from '../../domain/cards/CardPurchaseRepository'
 
 const DATABASE_NAME = 'stack-finance'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
 const ACCOUNTS_STORE = 'accounts'
 const TRANSACTIONS_STORE = 'transactions'
-type StoreName = typeof ACCOUNTS_STORE | typeof TRANSACTIONS_STORE
+const CARDS_STORE = 'cards'
+type StoreName = typeof ACCOUNTS_STORE | typeof TRANSACTIONS_STORE | typeof CARDS_STORE | 'cardPurchases'
 
 interface AccountRecord {
   id: string
@@ -16,6 +21,10 @@ interface AccountRecord {
   initialBalanceCents: number
   createdAt: string
 }
+
+interface CardRecord { id: string; name: string; closingDay: number; dueDay: number; createdAt: string }
+
+interface CardPurchaseRecord { id: string; cardId: string; description: string; amountCents: number; installments: number; categoryId: string; date: string; createdAt: string }
 
 interface TransactionRecord {
   id: string
@@ -28,7 +37,7 @@ interface TransactionRecord {
   createdAt: string
 }
 
-export class IndexedDbFinanceRepository implements AccountRepository, TransactionRepository {
+export class IndexedDbFinanceRepository implements AccountRepository, TransactionRepository, CreditCardRepository, CardPurchaseRepository {
   private databasePromise?: Promise<IDBDatabase>
 
   async getAllAccounts(): Promise<Account[]> {
@@ -102,6 +111,38 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     } satisfies TransactionRecord))
   }
 
+  async getAllCards(): Promise<CreditCard[]> {
+    const records = await this.run<CardRecord[]>(CARDS_STORE, 'readonly', (store) => store.getAll())
+    return records.map((record) => CreditCard.restore(record))
+  }
+
+  async getCardById(id: string): Promise<CreditCard | undefined> {
+    const record = await this.run<CardRecord | undefined>(CARDS_STORE, 'readonly', (store) => store.get(id))
+    return record ? CreditCard.restore(record) : undefined
+  }
+
+  async saveCard(card: CreditCard): Promise<void> {
+    await this.run<IDBValidKey>(CARDS_STORE, 'readwrite', (store) => store.put({
+      id: card.id, name: card.name, closingDay: card.closingDay, dueDay: card.dueDay, createdAt: card.createdAt,
+    } satisfies CardRecord))
+  }
+
+  async getAllCardPurchases(): Promise<CardPurchase[]> {
+    const records = await this.run<CardPurchaseRecord[]>('cardPurchases', 'readonly', (store) => store.getAll())
+    return records.map((record) => CardPurchase.restore({
+      id: record.id, cardId: record.cardId, description: record.description,
+      amount: Money.fromCents(record.amountCents), installments: record.installments,
+      categoryId: record.categoryId, date: record.date, createdAt: record.createdAt,
+    }))
+  }
+
+  async saveCardPurchase(purchase: CardPurchase): Promise<void> {
+    await this.run<IDBValidKey>('cardPurchases', 'readwrite', (store) => store.put({
+      id: purchase.id, cardId: purchase.cardId, description: purchase.description,
+      amountCents: purchase.amount.cents, installments: purchase.installments,
+      categoryId: purchase.categoryId, date: purchase.date, createdAt: purchase.createdAt,
+    } satisfies CardPurchaseRecord))
+  }
   async deleteTransactionById(id: string): Promise<void> {
     await this.run<undefined>(TRANSACTIONS_STORE, 'readwrite', (store) => store.delete(id))
   }
@@ -114,6 +155,14 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
           const database = request.result
           if (!database.objectStoreNames.contains(ACCOUNTS_STORE)) {
             database.createObjectStore(ACCOUNTS_STORE, { keyPath: 'id' })
+          }
+          if (!database.objectStoreNames.contains(CARDS_STORE)) {
+            database.createObjectStore(CARDS_STORE, { keyPath: 'id' })
+          }
+          if (!database.objectStoreNames.contains('cardPurchases')) {
+            const store = database.createObjectStore('cardPurchases', { keyPath: 'id' })
+            store.createIndex('cardId', 'cardId', { unique: false })
+            store.createIndex('date', 'date', { unique: false })
           }
           if (!database.objectStoreNames.contains(TRANSACTIONS_STORE)) {
             const store = database.createObjectStore(TRANSACTIONS_STORE, { keyPath: 'id' })
@@ -148,5 +197,8 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     })
   }
 }
+
+
+
 
 
