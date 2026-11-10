@@ -59,7 +59,7 @@ A estrutura detalhada do domínio acompanhará a definição dos fluxos de uso. 
 
 ## 4. Direção de arquitetura
 
-Organizar o código por funcionalidade e manter regras financeiras fora dos componentes visuais. A organização prevista é:
+A interface será construída com React e TypeScript, usando Vite para desenvolvimento e geração dos builds. O código será organizado por funcionalidade, mantendo as regras financeiras fora dos componentes visuais.
 
 - **Domínio:** tipos/objetos com regras e invariantes, como compra, divisão e posição de investimento.
 - **Aplicação:** casos de uso, como registrar compra, pagar fatura, liquidar acerto e calcular o resumo mensal.
@@ -100,7 +100,6 @@ O repositório adota o formato `tipo(escopo opcional): descrição curta`, por e
 
 ## 8. Definições pendentes
 
-- Biblioteca de interface e ferramenta de build para a fundação TypeScript.
 - Estratégia exata de instalação PWA e compatibilidade de armazenamento nos navegadores alvo.
 - Regras detalhadas de parcelamento, estorno, reembolso e divisão variável.
 - Método de custo de ativos e tratamento de vendas parciais.

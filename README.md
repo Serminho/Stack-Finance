@@ -28,15 +28,24 @@ A interface será responsiva e poderá ser instalável como PWA. A direção vis
 
 As etapas poderão ser divididas em entregas menores.
 
-## Tecnologias propostas
+## Tecnologias
 
 - TypeScript para modelar os dados e as regras com tipos explícitos.
-- Uma interface web responsiva. A biblioteca de interface e as ferramentas serão definidas na etapa de fundação.
+- React para a interface e Vite para desenvolvimento e build.
 - IndexedDB para armazenamento offline no navegador.
 - Exportação e importação de backup local, com validação dos dados.
 
 ## Desenvolvimento
 
+Requisitos: Node.js 20.19+ ou 22.12+ e npm.
+
+```bash
+npm install
+npm run dev
+```
+
+Para gerar uma versão de produção, execute `npm run build`.
 Veja [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) para escopo, regras iniciais e proposta de arquitetura.
+
 
 
