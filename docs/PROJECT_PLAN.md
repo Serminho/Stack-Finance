@@ -11,6 +11,7 @@ Stack Finance será um app financeiro pessoal, offline-first e responsivo. A pri
 ### Painel e movimentações
 
 - Registrar receitas e despesas com valor, data, conta, categoria e descrição.
+- Usar categorias predefinidas nesta versão; o cadastro de categorias personalizadas ainda não está implementado.
 - Consultar por mês, conta e categoria.
 - Apresentar o saldo atual separado das previsões.
 - Permitir correção de lançamentos sem perder vínculos com faturas e acertos.
@@ -39,7 +40,7 @@ Stack Finance será um app financeiro pessoal, offline-first e responsivo. A pri
 
 ## 3. Regras e modelo de dados propostos
 
-Valores monetários serão representados em centavos inteiros (ou tipo decimal exato), nunca em ponto flutuante binário comum. Datas de calendário serão armazenadas sem conversões implícitas de fuso horário. Identificadores estáveis permitirão relacionar operações e itens ao longo do tempo.
+Valores monetários são armazenados em centavos inteiros, sem usar ponto flutuante binário para cálculos financeiros. Datas de calendário são armazenadas sem conversões implícitas de fuso horário. Identificadores estáveis relacionam operações e itens ao longo do tempo.
 
 Entidades candidatas:
 
@@ -85,8 +86,8 @@ A interface será construída com React e TypeScript, usando Vite para desenvolv
 
 ## 6. Etapas e critérios de conclusão
 
-1. **Planejamento e fundação:** definir a arquitetura e a estrutura inicial, configurar TypeScript e preparar a execução local. Critério de conclusão: projeto executável e documentação de arquitetura e execução.
-2. **Contas e movimentações:** cadastrar, editar, remover e consultar lançamentos, apresentar totais mensais conferíveis.
+1. **Planejamento e fundação — concluída:** estrutura React, TypeScript e Vite configurada; aplicação executável localmente.
+2. **Contas e movimentações — em andamento:** cadastro de contas com saldo inicial; registro, consulta mensal e exclusão de receitas e despesas; cálculo do saldo atual; persistência local em IndexedDB. Categorias são predefinidas. Edição de lançamentos e categorias personalizadas permanecem fora da implementação atual.
 3. **Cartões e compartilhamento:** ciclos de fatura, parcelas, divisão exata, estado pago/pendente e acertos sem dupla contagem.
 4. **Investimentos:** histórico de operações e posição calculada com preço manual datado.
 5. **Planejamento:** orçamento, reserva e cálculo explicado do valor disponível para investir.
@@ -105,3 +106,5 @@ O repositório adota o formato `tipo(escopo opcional): descrição curta`, por e
 - Método de custo de ativos e tratamento de vendas parciais.
 - Conteúdo e formato do backup e se a importação terá opção de mesclar.
 - Direção final de identidade visual e elementos de gamificação discreta.
+
+

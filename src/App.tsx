@@ -1,71 +1,165 @@
+import { useCallback, useEffect, useState } from 'react'
+import { CreateAccount } from './application/accounts/CreateAccount'
+import { GetFinanceOverview, type FinanceOverview } from './application/finance/GetFinanceOverview'
+import { CreateTransaction } from './application/transactions/CreateTransaction'
+import { DeleteTransaction } from './application/transactions/DeleteTransaction'
+import { Money } from './domain/money/Money'
+import { IndexedDbFinanceRepository } from './infrastructure/persistence/IndexedDbFinanceRepository'
+import AccountForm, { type AccountFormValues } from './features/accounts/AccountForm'
+import Modal from './features/shared/Modal'
+import TransactionForm, { type TransactionFormValues } from './features/transactions/TransactionForm'
+import TransactionList from './features/transactions/TransactionList'
+
+const repository = new IndexedDbFinanceRepository()
+const createAccount = new CreateAccount(repository)
+const createTransaction = new CreateTransaction(repository, repository)
+const deleteTransaction = new DeleteTransaction(repository)
+const getFinanceOverview = new GetFinanceOverview(repository, repository)
+
+type ActiveModal = 'account' | 'transaction' | null
+
+function currentMonth(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function monthTitle(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number)
+  const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+    .format(new Date(year, monthNumber - 1, 1))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 function StackMark() {
+  return <span aria-hidden="true" className="brand-mark"><span /><span /><span /></span>
+}
+
+function SummaryCard({ label, value, tone, detail }: { label: string; value: Money; tone?: string; detail: string }) {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
-      <span />
-      <span />
-    </span>
+    <article className={`summary-card ${tone ?? ''}`}>
+      <div className="summary-card-top"><span>{label}</span><span className="summary-mark" aria-hidden="true" /></div>
+      <strong className="summary-value">{value.format()}</strong>
+      <span className="summary-detail">{detail}</span>
+    </article>
   )
 }
 
 function App() {
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [overview, setOverview] = useState<FinanceOverview | null>(null)
+  const [modal, setModal] = useState<ActiveModal>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [pageError, setPageError] = useState('')
+
+  const refreshOverview = useCallback(async () => {
+    setIsLoading(true)
+    setPageError('')
+    try {
+      const data = await getFinanceOverview.execute(selectedMonth)
+      setOverview(data)
+    } catch (cause) {
+      setPageError(cause instanceof Error ? cause.message : 'Não foi possível carregar os dados locais.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedMonth])
+
+  useEffect(() => { void refreshOverview() }, [refreshOverview])
+
+  async function handleCreateAccount(values: AccountFormValues) {
+    await createAccount.execute(values)
+    await refreshOverview()
+    setModal(null)
+  }
+
+  async function handleCreateTransaction(values: TransactionFormValues) {
+    await createTransaction.execute(values)
+    await refreshOverview()
+    setModal(null)
+  }
+
+  async function handleDeleteTransaction(id: string) {
+    if (!window.confirm('Excluir esta movimentação? O saldo será recalculado.')) return
+    try {
+      await deleteTransaction.execute(id)
+      await refreshOverview()
+    } catch (cause) {
+      setPageError(cause instanceof Error ? cause.message : 'Não foi possível excluir a movimentação.')
+    }
+  }
+
+  const accounts = overview?.accounts.map((item) => item.account) ?? []
+  const hasAccounts = accounts.length > 0
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#inicio" aria-label="Stack Finance, início">
-          <StackMark />
-          <span>stack<span className="brand-accent">finance</span></span>
+          <StackMark /><span>stack<span className="brand-accent">finance</span></span>
         </a>
-        <span className="phase-tag"><span className="phase-dot" /> Fundação do projeto</span>
+        <span className="local-badge"><span /> SEUS DADOS FICAM NESTE DISPOSITIVO</span>
       </header>
 
-      <main id="inicio">
-        <section className="welcome-card" aria-labelledby="welcome-title">
-          <div className="welcome-copy">
-            <p className="eyebrow"><span className="eyebrow-line" /> SUAS FINANÇAS, EM CAMADAS</p>
-            <h1 id="welcome-title">Uma visão mais clara do seu dinheiro.</h1>
-            <p className="intro">
-              Receitas, despesas, contas e investimentos reunidos em um só lugar.
-            </p>
-            <div className="next-step">
-              <span className="step-number">01</span>
-              <span>
-                <strong>O projeto está começando</strong>
-                <small>A base do Stack Finance está pronta para crescer.</small>
-              </span>
-            </div>
+      <main className="dashboard" id="inicio">
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow"><span className="eyebrow-line" /> PAINEL FINANCEIRO</p>
+            <h1>Visão geral</h1>
+            <p className="page-subtitle">Acompanhe seu saldo e as movimentações do mês.</p>
           </div>
-          <div className="visual" aria-hidden="true">
-            <div className="visual-grid" />
-            <div className="visual-card visual-card-back" />
-            <div className="visual-card visual-card-middle"><span /><span /><span /></div>
-            <div className="visual-card visual-card-front">
-              <span className="mini-label">VISÃO FINANCEIRA</span>
-              <span className="mini-value">em construção</span>
-              <span className="mini-bars"><i /><i /><i /><i /><i /><i /><i /></span>
-            </div>
-            <span className="spark spark-one">✳</span>
-            <span className="spark spark-two">✳</span>
+          <div className="heading-actions">
+            <button className="button button-secondary" onClick={() => setModal('account')} type="button">＋ Nova conta</button>
+            <button className="button button-primary" disabled={!hasAccounts} onClick={() => setModal('transaction')} type="button">＋ Movimentação</button>
           </div>
+        </div>
+
+        {pageError && <div className="page-error" role="alert"><span>{pageError}</span><button className="icon-button" onClick={() => setPageError('')} type="button" aria-label="Fechar aviso">×</button></div>}
+
+        <section aria-label="Resumo financeiro" className="summary-grid">
+          <SummaryCard detail="Em todas as contas" label="Saldo atual" value={overview?.totalBalance ?? Money.zero()} />
+          <SummaryCard detail={monthTitle(selectedMonth)} label="Entradas do mês" tone="summary-income" value={overview?.monthlyIncome ?? Money.zero()} />
+          <SummaryCard detail={monthTitle(selectedMonth)} label="Saídas do mês" tone="summary-expense" value={overview?.monthlyExpenses ?? Money.zero()} />
         </section>
 
-        <section className="foundation-row" aria-label="Princípios do projeto">
-          <article className="foundation-item">
-            <span className="item-index">A</span>
-            <div><h2>Clareza</h2><p>Entenda o que entra, o que sai e o que está por vir.</p></div>
-          </article>
-          <article className="foundation-item">
-            <span className="item-index">B</span>
-            <div><h2>Controle</h2><p>Acompanhe contas e compromissos sem perder o contexto.</p></div>
-          </article>
-          <article className="foundation-item">
-            <span className="item-index">C</span>
-            <div><h2>Progresso</h2><p>Construa uma visão completa das suas finanças, etapa por etapa.</p></div>
-          </article>
-        </section>
+        <div className="dashboard-grid">
+          <section aria-labelledby="accounts-title" className="panel accounts-panel">
+            <div className="panel-heading">
+              <div><span className="panel-kicker">SEU DINHEIRO</span><h2 id="accounts-title">Contas</h2></div>
+              <button aria-label="Adicionar conta" className="icon-button add-button" onClick={() => setModal('account')} type="button">＋</button>
+            </div>
+            {isLoading ? <p className="subtle-message">Carregando contas…</p> : hasAccounts ? (
+              <ul className="account-list">
+                {overview?.accounts.map(({ account, balance }) => (
+                  <li className="account-row" key={account.id}>
+                    <span className="account-icon" aria-hidden="true">▤</span>
+                    <span className="account-name"><strong>{account.name}</strong><small>Saldo inicial {account.initialBalance.format()}</small></span>
+                    <strong className="account-balance">{balance.format()}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-accounts"><p>Cadastre uma conta para começar a organizar seu saldo.</p><button className="text-button" onClick={() => setModal('account')} type="button">Criar primeira conta <span>→</span></button></div>
+            )}
+            {hasAccounts && <button className="add-account-link" onClick={() => setModal('account')} type="button">＋ Adicionar conta</button>}
+          </section>
+
+          <section aria-labelledby="transactions-title" className="panel transactions-panel">
+            <div className="panel-heading transaction-heading">
+              <div><span className="panel-kicker">ENTRADAS E SAÍDAS</span><h2 id="transactions-title">Movimentações</h2></div>
+              <label className="month-picker"><span className="sr-only">Mês das movimentações</span><input aria-label="Mês das movimentações" onChange={(event) => setSelectedMonth(event.target.value)} type="month" value={selectedMonth} /></label>
+            </div>
+            <p className="month-label">{monthTitle(selectedMonth)}</p>
+            {isLoading ? <p className="subtle-message">Carregando movimentações…</p> : (
+              <TransactionList accounts={accounts} onDelete={(id) => void handleDeleteTransaction(id)} transactions={overview?.transactions ?? []} />
+            )}
+          </section>
+        </div>
       </main>
 
-      <footer className="footer"><span>STACK FINANCE</span><span>Organização financeira pessoal</span></footer>
+      <footer className="footer"><span>STACK FINANCE</span><span>Suas movimentações, organizadas com clareza.</span></footer>
+
+      {modal === 'account' && <Modal onClose={() => setModal(null)} title="Nova conta"><AccountForm onCancel={() => setModal(null)} onSubmit={handleCreateAccount} /></Modal>}
+      {modal === 'transaction' && <Modal onClose={() => setModal(null)} title="Nova movimentação"><TransactionForm accounts={accounts} onCancel={() => setModal(null)} onSubmit={handleCreateTransaction} /></Modal>}
     </div>
   )
 }
