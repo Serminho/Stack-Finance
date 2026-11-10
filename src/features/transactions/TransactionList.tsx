@@ -7,6 +7,7 @@ type TransactionListProps = {
   transactions: FinancialTransaction[]
   accounts: Account[]
   onDelete: (id: string) => void
+  onEdit: (transaction: FinancialTransaction) => void
 }
 
 function formatDate(date: string): string {
@@ -15,7 +16,7 @@ function formatDate(date: string): string {
     .replace('.', '')
 }
 
-function TransactionList({ transactions, accounts, onDelete }: TransactionListProps) {
+function TransactionList({ transactions, accounts, onDelete, onEdit }: TransactionListProps) {
   if (transactions.length === 0) {
     return (
       <div className="empty-state">
@@ -43,6 +44,7 @@ function TransactionList({ transactions, accounts, onDelete }: TransactionListPr
             <strong className={`transaction-amount ${isIncome ? 'amount-income' : ''}`}>
               {isIncome ? '+' : '−'}{Money.fromCents(transaction.amount.cents).format()}
             </strong>
+            <button className="icon-button edit-button" aria-label={`Editar ${transaction.description}`} onClick={() => onEdit(transaction)} type="button" title="Editar movimentação">✎</button>
             <button className="icon-button delete-button" aria-label={`Excluir ${transaction.description}`} onClick={() => onDelete(transaction.id)} type="button" title="Excluir movimentação">×</button>
           </li>
         )
@@ -52,4 +54,6 @@ function TransactionList({ transactions, accounts, onDelete }: TransactionListPr
 }
 
 export default TransactionList
+
+
 

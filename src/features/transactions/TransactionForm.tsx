@@ -16,6 +16,7 @@ type TransactionFormProps = {
   accounts: Account[]
   onSubmit: (values: TransactionFormValues) => Promise<void>
   onCancel: () => void
+  initialValues?: TransactionFormValues
 }
 
 function localDate(): string {
@@ -26,13 +27,13 @@ function localDate(): string {
   return `${year}-${month}-${day}`
 }
 
-function TransactionForm({ accounts, onSubmit, onCancel }: TransactionFormProps) {
-  const [type, setType] = useState<TransactionType>('expense')
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
-  const [categoryId, setCategoryId] = useState(categoriesFor('expense')[0]?.id ?? '')
-  const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
-  const [date, setDate] = useState(localDate)
+function TransactionForm({ accounts, onSubmit, onCancel, initialValues }: TransactionFormProps) {
+  const [type, setType] = useState<TransactionType>(initialValues?.type ?? 'expense')
+  const [accountId, setAccountId] = useState(initialValues?.accountId ?? accounts[0]?.id ?? '')
+  const [categoryId, setCategoryId] = useState(initialValues?.categoryId ?? categoriesFor(initialValues?.type ?? 'expense')[0]?.id ?? '')
+  const [amount, setAmount] = useState(initialValues?.amount ?? '')
+  const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [date, setDate] = useState(initialValues?.date ?? localDate)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -94,10 +95,12 @@ function TransactionForm({ accounts, onSubmit, onCancel }: TransactionFormProps)
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="form-actions">
         <button className="button button-quiet" onClick={onCancel} type="button">Cancelar</button>
-        <button className="button button-primary" disabled={isSaving} type="submit">{isSaving ? 'Salvando…' : 'Salvar movimentação'}</button>
+        <button className="button button-primary" disabled={isSaving} type="submit">{isSaving ? 'Salvando…' : 'Salvar alterações'}</button>
       </div>
     </form>
   )
 }
 
 export default TransactionForm
+
+

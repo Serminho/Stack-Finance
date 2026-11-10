@@ -75,6 +75,11 @@ A interface será construída com React e TypeScript, usando Vite para desenvolv
 - Funcionalidades novas devem estender os pontos previstos sem exigir alterações espalhadas por toda a aplicação.
 - Classes agrupam estado e comportamento quando isso protege regras do domínio. Tipos e funções simples representam dados sem comportamento, nem todo objeto precisa de uma abstração própria.
 
+### Testes automatizados
+
+- Vitest cobre regras de domínio e casos de uso da aplicação.
+- Testes de aplicação usam repositórios em memória para verificar regras sem depender do IndexedDB.
+- `npm run test` executa a suíte automatizada.
 ## 5. Offline, dispositivos e dados
 
 - Interface responsiva com prioridade de uso em telas pequenas.
@@ -87,7 +92,7 @@ A interface será construída com React e TypeScript, usando Vite para desenvolv
 ## 6. Etapas e critérios de conclusão
 
 1. **Planejamento e fundação — concluída:** estrutura React, TypeScript e Vite configurada; aplicação executável localmente.
-2. **Contas e movimentações — em andamento:** cadastro de contas com saldo inicial; registro, consulta mensal e exclusão de receitas e despesas; cálculo do saldo atual; persistência local em IndexedDB. Categorias são predefinidas. Edição de lançamentos e categorias personalizadas permanecem fora da implementação atual.
+2. **Contas e movimentações — em andamento:** cadastro de contas com saldo inicial; registro, consulta mensal, edição e exclusão de receitas e despesas; cálculo do saldo atual; persistência local em IndexedDB. Categorias são predefinidas; categorias personalizadas permanecem fora da implementação atual.
 3. **Cartões e compartilhamento:** ciclos de fatura, parcelas, divisão exata, estado pago/pendente e acertos sem dupla contagem.
 4. **Investimentos:** histórico de operações e posição calculada com preço manual datado.
 5. **Planejamento:** orçamento, reserva e cálculo explicado do valor disponível para investir.
@@ -106,5 +111,6 @@ O repositório adota o formato `tipo(escopo opcional): descrição curta`, por e
 - Método de custo de ativos e tratamento de vendas parciais.
 - Conteúdo e formato do backup e se a importação terá opção de mesclar.
 - Direção final de identidade visual e elementos de gamificação discreta.
+
 
 

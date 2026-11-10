@@ -49,7 +49,14 @@ export class FinancialTransaction {
     })
   }
 
+  static revise(
+    existing: FinancialTransaction,
+    changes: Omit<FinancialTransactionProps, 'id' | 'createdAt'>,
+  ): FinancialTransaction {
+    return new FinancialTransaction({ ...changes, id: existing.id, createdAt: existing.createdAt })
+  }
   static restore(props: FinancialTransactionProps): FinancialTransaction {
     return new FinancialTransaction(props)
   }
 }
+

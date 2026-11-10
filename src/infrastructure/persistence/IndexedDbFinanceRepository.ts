@@ -75,6 +75,20 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     }))
   }
 
+  async getTransactionById(id: string): Promise<FinancialTransaction | undefined> {
+    const record = await this.run<TransactionRecord | undefined>(TRANSACTIONS_STORE, 'readonly', (store) => store.get(id))
+    if (!record) return undefined
+    return FinancialTransaction.restore({
+      id: record.id,
+      accountId: record.accountId,
+      type: record.type,
+      amount: Money.fromCents(record.amountCents),
+      categoryId: record.categoryId,
+      description: record.description,
+      date: record.date,
+      createdAt: record.createdAt,
+    })
+  }
   async saveTransaction(transaction: FinancialTransaction): Promise<void> {
     await this.run<IDBValidKey>(TRANSACTIONS_STORE, 'readwrite', (store) => store.put({
       id: transaction.id,
@@ -134,4 +148,5 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     })
   }
 }
+
 

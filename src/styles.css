@@ -87,7 +87,7 @@ h1 { margin-bottom: 7px; font-size: clamp(29px, 4vw, 38px); line-height: 1.15; l
 .month-picker input { max-width: 147px; min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: #58665e; background: #fff; font-size: 10px; }
 .month-label { margin: 18px 0 0; color: #87948c; font-size: 10px; text-transform: capitalize; }
 .transaction-list { list-style: none; padding: 0; margin: 3px 0 0; }
-.transaction-row { min-width: 0; display: grid; grid-template-columns: 34px minmax(90px, 1fr) 53px auto 29px; gap: 11px; align-items: center; padding: 13px 0; border-top: 1px solid #eef1ed; }
+.transaction-row { min-width: 0; display: grid; grid-template-columns: 34px minmax(90px, 1fr) 53px auto 27px 27px; gap: 11px; align-items: center; padding: 13px 0; border-top: 1px solid #eef1ed; }
 .transaction-symbol { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: #fbf3eb; color: #bd8654; font-size: 15px; }
 .symbol-income { background: #eff8f1; color: #3a9361; }
 .transaction-main { min-width: 0; }
@@ -98,6 +98,8 @@ h1 { margin-bottom: 7px; font-size: clamp(29px, 4vw, 38px); line-height: 1.15; l
 .transaction-date { color: #88948d; font-size: 9px; text-align: right; white-space: nowrap; }
 .transaction-amount { color: #c0804a; font-size: 10px; text-align: right; white-space: nowrap; }
 .amount-income { color: #37835b; }
+.edit-button { width: 27px; height: 27px; border-color: transparent; color: #839189; background: transparent; font-size: 13px; }
+.edit-button:hover { color: var(--green); border-color: #d8e9dd; background: #f4faf5; }
 .delete-button { width: 27px; height: 27px; border-color: transparent; color: #9aa49e; background: transparent; font-size: 18px; }
 .delete-button:hover { color: #a94c43; border-color: #f0d9d5; background: #fff8f7; }
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 37px 12px 42px; text-align: center; }
@@ -156,11 +158,13 @@ h1 { margin-bottom: 7px; font-size: clamp(29px, 4vw, 38px); line-height: 1.15; l
   .panel { border-radius: 11px; }
   .transactions-panel { padding: 18px 14px 5px; }
   .accounts-panel { padding: 18px 14px 14px; }
-  .transaction-row { grid-template-columns: 31px minmax(70px, 1fr) 43px auto 25px; gap: 7px; padding: 12px 0; }
+  .transaction-row { grid-template-columns: 31px minmax(70px, 1fr) 43px auto 23px 24px; gap: 7px; padding: 12px 0; }
   .transaction-symbol { width: 29px; height: 29px; }
   .transaction-main strong { font-size: 10px; }.transaction-main span { font-size: 8px; }
   .transaction-date { font-size: 8px; }.transaction-amount { font-size: 9px; }
-  .delete-button { width: 24px; height: 25px; }
+  .edit-button { width: 27px; height: 27px; border-color: transparent; color: #839189; background: transparent; font-size: 13px; }
+.edit-button:hover { color: var(--green); border-color: #d8e9dd; background: #f4faf5; }
+.delete-button { width: 24px; height: 25px; }
   .month-picker input { max-width: 128px; height: 33px; padding: 0 6px; font-size: 9px; }
   .account-list { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
@@ -168,3 +172,5 @@ h1 { margin-bottom: 7px; font-size: clamp(29px, 4vw, 38px); line-height: 1.15; l
   .modal-card { padding: 21px 17px max(18px, env(safe-area-inset-bottom)); border-radius: 15px; }
   .footer { gap: 10px; font-size: 7px; }.footer span:last-child { text-align: right; }
 }
+
+

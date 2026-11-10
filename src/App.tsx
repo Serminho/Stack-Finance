@@ -3,7 +3,9 @@ import { CreateAccount } from './application/accounts/CreateAccount'
 import { GetFinanceOverview, type FinanceOverview } from './application/finance/GetFinanceOverview'
 import { CreateTransaction } from './application/transactions/CreateTransaction'
 import { DeleteTransaction } from './application/transactions/DeleteTransaction'
+import { UpdateTransaction } from './application/transactions/UpdateTransaction'
 import { Money } from './domain/money/Money'
+import type { FinancialTransaction } from './domain/transactions/FinancialTransaction'
 import { IndexedDbFinanceRepository } from './infrastructure/persistence/IndexedDbFinanceRepository'
 import AccountForm, { type AccountFormValues } from './features/accounts/AccountForm'
 import Modal from './features/shared/Modal'
@@ -14,6 +16,7 @@ const repository = new IndexedDbFinanceRepository()
 const createAccount = new CreateAccount(repository)
 const createTransaction = new CreateTransaction(repository, repository)
 const deleteTransaction = new DeleteTransaction(repository)
+const updateTransaction = new UpdateTransaction(repository, repository)
 const getFinanceOverview = new GetFinanceOverview(repository, repository)
 
 type ActiveModal = 'account' | 'transaction' | null
@@ -48,6 +51,7 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [overview, setOverview] = useState<FinanceOverview | null>(null)
   const [modal, setModal] = useState<ActiveModal>(null)
+  const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [pageError, setPageError] = useState('')
 
@@ -78,6 +82,13 @@ function App() {
     setModal(null)
   }
 
+  async function handleUpdateTransaction(values: TransactionFormValues) {
+    if (!editingTransaction) return
+    await updateTransaction.execute({ ...values, id: editingTransaction.id })
+    setEditingTransaction(null)
+    setModal(null)
+    await refreshOverview()
+  }
   async function handleDeleteTransaction(id: string) {
     if (!window.confirm('Excluir esta movimentação? O saldo será recalculado.')) return
     try {
@@ -109,7 +120,7 @@ function App() {
           </div>
           <div className="heading-actions">
             <button className="button button-secondary" onClick={() => setModal('account')} type="button">＋ Nova conta</button>
-            <button className="button button-primary" disabled={!hasAccounts} onClick={() => setModal('transaction')} type="button">＋ Movimentação</button>
+            <button className="button button-primary" disabled={!hasAccounts} onClick={() => { setEditingTransaction(null); setModal('transaction') }} type="button">＋ Movimentação</button>
           </div>
         </div>
 
@@ -150,7 +161,7 @@ function App() {
             </div>
             <p className="month-label">{monthTitle(selectedMonth)}</p>
             {isLoading ? <p className="subtle-message">Carregando movimentações…</p> : (
-              <TransactionList accounts={accounts} onDelete={(id) => void handleDeleteTransaction(id)} transactions={overview?.transactions ?? []} />
+              <TransactionList accounts={accounts} onDelete={(id) => void handleDeleteTransaction(id)} onEdit={(transaction) => { setEditingTransaction(transaction); setModal('transaction') }} transactions={overview?.transactions ?? []} />
             )}
           </section>
         </div>
@@ -159,9 +170,11 @@ function App() {
       <footer className="footer"><span>STACK FINANCE</span><span>Suas movimentações, organizadas com clareza.</span></footer>
 
       {modal === 'account' && <Modal onClose={() => setModal(null)} title="Nova conta"><AccountForm onCancel={() => setModal(null)} onSubmit={handleCreateAccount} /></Modal>}
-      {modal === 'transaction' && <Modal onClose={() => setModal(null)} title="Nova movimentação"><TransactionForm accounts={accounts} onCancel={() => setModal(null)} onSubmit={handleCreateTransaction} /></Modal>}
+      {modal === 'transaction' && <Modal onClose={() => { setModal(null); setEditingTransaction(null) }} title={editingTransaction ? "Editar movimentação" : "Nova movimentação"}><TransactionForm key={editingTransaction?.id ?? "new"} accounts={accounts} initialValues={editingTransaction ? { accountId: editingTransaction.accountId, type: editingTransaction.type, amount: (editingTransaction.amount.cents / 100).toFixed(2).replace(".", ","), categoryId: editingTransaction.categoryId, description: editingTransaction.description, date: editingTransaction.date } : undefined} onCancel={() => { setModal(null); setEditingTransaction(null) }} onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction} /></Modal>}
     </div>
   )
 }
 
 export default App
+
+
