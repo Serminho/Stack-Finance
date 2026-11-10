@@ -7,13 +7,15 @@ import { CreditCard } from '../../domain/cards/CreditCard'
 import type { CreditCardRepository } from '../../domain/cards/CreditCardRepository'
 import { CardPurchase } from '../../domain/cards/CardPurchase'
 import type { CardPurchaseRepository } from '../../domain/cards/CardPurchaseRepository'
+import { Person } from '../../domain/people/Person'
+import type { PersonRepository } from '../../domain/people/PersonRepository'
 
 const DATABASE_NAME = 'stack-finance'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 const ACCOUNTS_STORE = 'accounts'
 const TRANSACTIONS_STORE = 'transactions'
 const CARDS_STORE = 'cards'
-type StoreName = typeof ACCOUNTS_STORE | typeof TRANSACTIONS_STORE | typeof CARDS_STORE | 'cardPurchases'
+type StoreName = typeof ACCOUNTS_STORE | typeof TRANSACTIONS_STORE | typeof CARDS_STORE | 'cardPurchases' | 'people'
 
 interface AccountRecord {
   id: string
@@ -24,7 +26,8 @@ interface AccountRecord {
 
 interface CardRecord { id: string; name: string; closingDay: number; dueDay: number; createdAt: string }
 
-interface CardPurchaseRecord { id: string; cardId: string; description: string; amountCents: number; installments: number; categoryId: string; date: string; createdAt: string }
+interface CardPurchaseRecord { id: string; cardId: string; description: string; amountCents: number; installments: number; categoryId: string; date: string; createdAt: string; allocations?: { personId: string; amountCents: number }[] }
+interface PersonRecord { id: string; name: string; createdAt: string }
 
 interface TransactionRecord {
   id: string
@@ -37,7 +40,7 @@ interface TransactionRecord {
   createdAt: string
 }
 
-export class IndexedDbFinanceRepository implements AccountRepository, TransactionRepository, CreditCardRepository, CardPurchaseRepository {
+export class IndexedDbFinanceRepository implements AccountRepository, TransactionRepository, CreditCardRepository, CardPurchaseRepository, PersonRepository {
   private databasePromise?: Promise<IDBDatabase>
 
   async getAllAccounts(): Promise<Account[]> {
@@ -132,6 +135,7 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     return records.map((record) => CardPurchase.restore({
       id: record.id, cardId: record.cardId, description: record.description,
       amount: Money.fromCents(record.amountCents), installments: record.installments,
+      allocations: (record.allocations ?? []).map((allocation) => ({ personId: allocation.personId, amount: Money.fromCents(allocation.amountCents) })),
       categoryId: record.categoryId, date: record.date, createdAt: record.createdAt,
     }))
   }
@@ -140,8 +144,22 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     await this.run<IDBValidKey>('cardPurchases', 'readwrite', (store) => store.put({
       id: purchase.id, cardId: purchase.cardId, description: purchase.description,
       amountCents: purchase.amount.cents, installments: purchase.installments,
+      allocations: purchase.allocations.map((allocation) => ({ personId: allocation.personId, amountCents: allocation.amount.cents })),
       categoryId: purchase.categoryId, date: purchase.date, createdAt: purchase.createdAt,
     } satisfies CardPurchaseRecord))
+  }
+  async getAllPeople(): Promise<Person[]> {
+    const records = await this.run<PersonRecord[]>('people', 'readonly', (store) => store.getAll())
+    return records.map((record) => Person.restore(record))
+  }
+
+  async getPersonById(id: string): Promise<Person | undefined> {
+    const record = await this.run<PersonRecord | undefined>('people', 'readonly', (store) => store.get(id))
+    return record ? Person.restore(record) : undefined
+  }
+
+  async savePerson(person: Person): Promise<void> {
+    await this.run<IDBValidKey>('people', 'readwrite', (store) => store.put({ id: person.id, name: person.name, createdAt: person.createdAt } satisfies PersonRecord))
   }
   async deleteTransactionById(id: string): Promise<void> {
     await this.run<undefined>(TRANSACTIONS_STORE, 'readwrite', (store) => store.delete(id))
@@ -155,6 +173,9 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
           const database = request.result
           if (!database.objectStoreNames.contains(ACCOUNTS_STORE)) {
             database.createObjectStore(ACCOUNTS_STORE, { keyPath: 'id' })
+          }
+          if (!database.objectStoreNames.contains('people')) {
+            database.createObjectStore('people', { keyPath: 'id' })
           }
           if (!database.objectStoreNames.contains(CARDS_STORE)) {
             database.createObjectStore(CARDS_STORE, { keyPath: 'id' })
@@ -197,6 +218,9 @@ export class IndexedDbFinanceRepository implements AccountRepository, Transactio
     })
   }
 }
+
+
+
 
 
 

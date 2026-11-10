@@ -3,6 +3,7 @@ import { CreateAccount } from './application/accounts/CreateAccount'
 import { CreateCardPurchase } from './application/cards/CreateCardPurchase'
 import { CreateCreditCard } from './application/cards/CreateCreditCard'
 import { GetCardForecast, type CardForecastView } from './application/cards/GetCardForecast'
+import { CreatePerson } from './application/people/CreatePerson'
 import { GetFinanceOverview, type FinanceOverview } from './application/finance/GetFinanceOverview'
 import { CreateTransaction } from './application/transactions/CreateTransaction'
 import { DeleteTransaction } from './application/transactions/DeleteTransaction'
@@ -10,6 +11,7 @@ import { UpdateTransaction } from './application/transactions/UpdateTransaction'
 import type { CardPurchaseFormValues } from './features/cards/CardPurchaseForm'
 import CardPurchaseForm from './features/cards/CardPurchaseForm'
 import CardForecastPanel from './features/cards/CardForecastPanel'
+import PeopleManager from './features/people/PeopleManager'
 import type { CreditCardFormValues } from './features/cards/CreditCardForm'
 import CreditCardForm from './features/cards/CreditCardForm'
 import AccountForm, { type AccountFormValues } from './features/accounts/AccountForm'
@@ -27,10 +29,11 @@ const deleteTransaction = new DeleteTransaction(repository)
 const updateTransaction = new UpdateTransaction(repository, repository)
 const getFinanceOverview = new GetFinanceOverview(repository, repository)
 const createCreditCard = new CreateCreditCard(repository)
-const createCardPurchase = new CreateCardPurchase(repository, repository)
-const getCardForecast = new GetCardForecast(repository, repository)
+const createCardPurchase = new CreateCardPurchase(repository, repository, repository)
+const getCardForecast = new GetCardForecast(repository, repository, repository)
+const createPerson = new CreatePerson(repository)
 
-type ActiveModal = 'account' | 'transaction' | 'card' | 'purchase' | null
+type ActiveModal = 'account' | 'transaction' | 'card' | 'purchase' | 'people' | null
 
 function currentMonth(): string {
   const now = new Date()
@@ -54,7 +57,7 @@ function SummaryCard({ label, value, tone, detail }: { label: string; value: Mon
 function App() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [overview, setOverview] = useState<FinanceOverview | null>(null)
-  const [cardForecast, setCardForecast] = useState<CardForecastView>({ cards: [], invoices: [] })
+  const [cardForecast, setCardForecast] = useState<CardForecastView>({ cards: [], people: [], invoices: [] })
   const [modal, setModal] = useState<ActiveModal>(null)
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null)
   const [selectedCardId, setSelectedCardId] = useState('')
@@ -116,6 +119,11 @@ function App() {
     setModal(null)
   }
 
+  async function handleCreatePerson(name: string) {
+    await createPerson.execute(name)
+    await refreshOverview()
+  }
+
   async function handleCreatePurchase(values: CardPurchaseFormValues) {
     await createCardPurchase.execute(values)
     await refreshOverview()
@@ -166,7 +174,7 @@ function App() {
           </section>
         </div>
 
-        <CardForecastPanel cards={cardForecast.cards} invoices={cardForecast.invoices} onAddCard={() => setModal('card')} onAddPurchase={(cardId) => { setSelectedCardId(cardId); setModal('purchase') }} />
+        <CardForecastPanel cards={cardForecast.cards} people={cardForecast.people} invoices={cardForecast.invoices} onAddCard={() => setModal('card')} onAddPurchase={(cardId) => { setSelectedCardId(cardId); setModal('purchase') }} onManagePeople={() => setModal('people')} />
       </main>
 
       <footer className="footer"><span>STACK FINANCE</span><span>Suas movimentações, organizadas com clareza.</span></footer>
@@ -174,9 +182,11 @@ function App() {
       {modal === 'account' && <Modal onClose={() => setModal(null)} title="Nova conta"><AccountForm onCancel={() => setModal(null)} onSubmit={handleCreateAccount} /></Modal>}
       {modal === 'transaction' && <Modal onClose={() => { setModal(null); setEditingTransaction(null) }} title={editingTransaction ? 'Editar movimentação' : 'Nova movimentação'}><TransactionForm key={editingTransaction?.id ?? 'new'} accounts={accounts} initialValues={editingTransaction ? { accountId: editingTransaction.accountId, type: editingTransaction.type, amount: (editingTransaction.amount.cents / 100).toFixed(2).replace('.', ','), categoryId: editingTransaction.categoryId, description: editingTransaction.description, date: editingTransaction.date } : undefined} onCancel={() => { setModal(null); setEditingTransaction(null) }} onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction} /></Modal>}
       {modal === 'card' && <Modal onClose={() => setModal(null)} title="Novo cartão"><CreditCardForm onCancel={() => setModal(null)} onSubmit={handleCreateCard} /></Modal>}
-      {modal === 'purchase' && <Modal onClose={() => { setModal(null); setSelectedCardId('') }} title="Registrar compra"><CardPurchaseForm cardId={selectedCardId} onCancel={() => { setModal(null); setSelectedCardId('') }} onSubmit={handleCreatePurchase} /></Modal>}
+      {modal === 'people' && <Modal onClose={() => setModal(null)} title="Pessoas"><PeopleManager people={cardForecast.people} onClose={() => setModal(null)} onCreate={handleCreatePerson} /></Modal>}      {modal === 'purchase' && <Modal onClose={() => { setModal(null); setSelectedCardId('') }} title="Registrar compra"><CardPurchaseForm cardId={selectedCardId} people={cardForecast.people} onCancel={() => { setModal(null); setSelectedCardId('') }} onSubmit={handleCreatePurchase} /></Modal>}
     </div>
   )
 }
 
 export default App
+
+
